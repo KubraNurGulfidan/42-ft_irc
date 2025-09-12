@@ -1,0 +1,1 @@
+// servera bağlanırken şifre gönderir

@@ -1,0 +1,1 @@
+//kanal başlığını değitirir

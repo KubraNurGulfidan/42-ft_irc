@@ -1,0 +1,1 @@
+//bir kullanıcıyı kanaldan atmak için

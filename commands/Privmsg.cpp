@@ -1,0 +1,1 @@
+// mesaj göndermek için

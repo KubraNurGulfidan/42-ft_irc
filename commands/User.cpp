@@ -1,0 +1,1 @@
+// kullanıcının username, ana makine adı, real name set eder

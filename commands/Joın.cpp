@@ -1,0 +1,1 @@
+// bir kanala katılmak için

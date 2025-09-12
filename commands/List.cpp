@@ -1,0 +1,1 @@
+// mevcut kanalların listesini ve kullancı sayılarını gösterir

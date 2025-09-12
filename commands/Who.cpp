@@ -1,0 +1,1 @@
+// kanaldaki kullanıcıların bilgilerini içeren liste oluşturur

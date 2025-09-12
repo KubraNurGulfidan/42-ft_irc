@@ -1,0 +1,7 @@
+class Client
+{
+	private:
+		
+	public:
+
+};
