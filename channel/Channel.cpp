@@ -1,0 +1,87 @@
+#include "Channel.hpp"
+# include "../client/Client.hpp"
+
+Channel::Channel(const std::string& _channelName)
+	: channelName(_channelName), topic(""), password(""), userLimit(100), inviteOnly(false) {}
+
+Channel::~Channel() {}
+
+void Channel::setMemebers(std::vector<Client *>& clients) { members = clients; }
+void Channel::setTopic(std::string newTopic) { topic = newTopic; }
+void Channel::setUserLimit(int limit) { userLimit = limit; }
+void Channel::setInviteOnly(bool value) { inviteOnly = value; }
+
+std::vector<Client *>& Channel::getMembers() { return members; }
+std::vector<Client *>& Channel::getAdmins() { return admins; }
+std::string Channel::getChannelName() { return channelName; }
+std::string Channel::getTopic() { return topic; }
+int Channel::getUserLimit() const { return userLimit; }
+
+bool Channel::isInviteOnly() const { return inviteOnly; }
+
+void Channel::addClient(Client* client)
+{
+	if (members.size() == (long unsigned int)userLimit)
+	{
+		std::cout << client->getNickname() << " couldn't add channel. Channel limit is full!" << std::endl;
+		return;
+	}
+    if (client && std::find(members.begin(), members.end(), client) == members.end()) 
+	{
+        members.push_back(client);
+        client->addChannel(this);
+    }
+}
+
+void Channel::addAdmin(Client* admin)
+{
+    if (admin && std::find(admins.begin(), admins.end(), admin) == admins.end())
+	{
+        admins.push_back(admin);
+        addClient(admin);
+    }
+}
+
+void Channel::removeClient(Client* client)
+{
+    if (!client)
+		return;
+
+    std::vector<Client*>::iterator it = std::find(members.begin(), members.end(), client);
+    if (it != members.end())
+	{
+        members.erase(it);
+        client->removeChannel(this);
+    }
+    removeAdmin(client);
+}
+
+void Channel::removeAdmin(Client* admin)
+{
+    if (!admin)
+		return;
+
+    std::vector<Client*>::iterator it = std::find(admins.begin(), admins.end(), admin);
+    if (it != admins.end())
+	{
+        admins.erase(it);
+    }
+}
+
+bool Channel::hasMember(Client* client) const
+{
+    if (!client)
+		return false;
+
+    std::vector<Client*>::const_iterator it = std::find(members.begin(), members.end(), client);
+    return (it != members.end());
+}
+
+bool Channel::hasAdmin(Client* client) const
+{
+    if (!client)
+		return false;
+
+    std::vector<Client*>::const_iterator it = std::find(admins.begin(), admins.end(), client);
+    return (it != admins.end());
+}
