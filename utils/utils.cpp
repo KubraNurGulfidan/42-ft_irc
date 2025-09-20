@@ -1,7 +1,10 @@
 #include "Utils.hpp"
-
-#include <string>
-#include <cctype>
+#include <cctype>//isdigit
+#include <cstdlib>//size_t
+#include <fcntl.h>//F_GETFL, F_SETFL, O_NONBLOCK
+#include <unistd.h>//close
+#include <errno.h>
+#include <ctime>//std::time için
 
 int ft_port_check(const std::string& port)
 {

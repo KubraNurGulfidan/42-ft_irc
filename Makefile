@@ -1,9 +1,10 @@
 NAME = ircserv
 
-SRCS = 	main.cpp #Channel/Channel.cpp Client/Client.cpp Server/Server.cpp \
-		 Commands/Nick.cpp Commands/Pass.cpp Commands/User.cpp \
-		Commands/Join.cpp Commands/Privmsg.cpp Commands/Who.cpp Commands/Kick.cpp \
-		Commands/Part.cpp Commands/Topic.cpp Commands/Quit.cpp Commands/Notice.cpp
+SRCS = main.cpp \
+       server/Server.cpp \
+       client/Client.cpp \
+       channel/Channel.cpp \
+       utils/utils.cpp
 
 OBJS = $(SRCS:.cpp=.o)
 CXX_STANDARD = c++98

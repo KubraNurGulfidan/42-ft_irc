@@ -1,5 +1,5 @@
 #include "Server.hpp"
-#include "utils/Utils.hpp"
+#include "../utils/Utils.hpp"
 #include <stdexcept>
 #include <iostream>
 #include <sstream>
@@ -101,7 +101,10 @@ void Server::handleListeningSocket(short revents)
             if (errno == EAGAIN || errno == EWOULDBLOCK)
                 break;
             else
-                break;//anlamadım.
+            {
+                std::cerr << "accept() failed: " << strerror(errno) << std::endl;
+                break;
+            }
         }
         if (setNonBlocking(cfd) == -1)
         {
@@ -191,6 +194,7 @@ void Server::handleClientWrite(int fd)
 
 void Server::disconnectClient(int fd, const std::string& reason)
 {
+    (void)reason;
     std::map<int, Client>::iterator it = _clients.find(fd);
     if (it == _clients.end())
         return;
@@ -304,6 +308,10 @@ void Server::dispatchCommand(Client& c, const std::string& line)
         cmdNOTICE(c, args);
     else if (cmd == "QUIT")
         cmdQUIT(c, args);
+    else if (cmd == "JOIN")
+        cmdJOIN(c, args);
+    else if (cmd == "PART")
+        cmdPART(c, args);
     //kanal komutları join part topic mode invite kick sonraki aşamalarda eklenecek
     else
         sendTo(c, ":server NOTICE * :Unknow Command\r\n");
@@ -442,7 +450,7 @@ void Server::cmdPRIVMSG(Client& c, const std::vector<std::string>& args)
     else
     {
         //kişiye özel
-        std::map<std::string, int>::iterator it = _nickToFd.(target);
+        std::map<std::string, int>::iterator it = _nickToFd.find(target);
         if (it == _nickToFd.end())
         {
             sendTo(c, ":server NOTICE * :No such nick\r\n");
@@ -484,4 +492,124 @@ void Server::cmdQUIT(Client& c, const std::vector<std::string>& args)
 {
     (void)args;
     disconnectClient(c.getFd(), "quit");
+}
+
+void Server::cmdJOIN(Client& c, const std::vector<std::string>& args)
+{
+    if (!c.isRegistered)
+    {
+        sendTo(c, ":server NOTICE * :You have not registered\r\n");
+        return;
+    }
+    if (args.empty())
+    {
+        sendTo(c, ":server NOTICE * :Need more parameters\r\n");
+        return;
+    }
+
+    std::string chanName = args[0];
+    std::string providedKey = (args.size() >= 2) ? args[1] : "";
+
+    if(chanName.empty() || chanName[0] != '#')
+    {
+        sendTo(c, ":server NOTICE * :Invalid channel name\r\n");
+        return;
+    }
+
+    Channel* ch = 0;
+    std::map<std::string, Channel>::iterator it = _channels.find(chanName);
+    if (it == _channels.end())
+    {
+        _channels.insert(std::make_pair(chanName, Channel(chanName)));
+        ch = &_channels.find(chanName)->second;
+    }
+    else
+        ch = &it->second;
+
+    if (ch->isMember(&c))
+        return;
+    
+    if (!ch->key.empty() && ch->key != providedKey)
+    {
+        sendTo(c, ":server NOTICE * :Cannot join channel (+k)\r\n");
+        return;
+    }
+    if (ch->userLimit != -1 && (int)ch->memberCount() >= ch->userLimit)
+    {
+        sendTo(c, ":server NOTICE * :Cannot join channel (+l)\r\n");
+        return;
+    }
+    if (ch->inviteOnly && ch->invited.count(&c) == 0)
+    {
+        sendTo(c, ":server NOTICE * :Cannot join channel (+i)\r\n");
+        return;
+    }
+
+    bool makeOperator = (ch->memberCount() == 0);
+    ch->addMember(&c, makeOperator);
+    c.joinedChannels.insert(chanName);
+    ch->invited.erase(&c);
+
+    std::string joinMsg = ":" + c.nickname + "!" + c.username + "@host JOIN " + chanName + "\r\n";
+    broadcastToChannel(chanName, joinMsg, -1);
+
+    if (!ch->topic.empty())
+        sendTo(c, ":server 332 " + c.nickname + " " + chanName + " :" + ch->topic + "\r\n");
+    else
+        sendTo(c, ":server 331 " + c.nickname + " " + chanName + " :No topic is set\r\n");
+
+    std::set<Client*> snap;
+    ch->membersSnapshot(snap);
+    std::string names;
+    for (std::set<Client*>::iterator ci = snap.begin(); ci != snap.end(); ++ci)
+    {
+        if (!names.empty())
+            names += " ";
+        names += (*ci)->nickname;
+    }
+    sendTo(c, ":server 353 " + c.nickname + " = " + chanName + " :" + names + "\r\n");
+    sendTo(c, ":server 366 " + c.nickname + " " + chanName + " :End of /NAMES list.\r\n");
+}
+
+void Server::cmdPART(Client& c, const std::vector<std::string>& args)
+{
+    if (!c.isRegistered)
+    {
+        sendTo(c, ":server NOTICE * :You have not registered\r\n");
+        return;
+    }
+    if (args.empty())
+    {
+        sendTo(c, ":server NOTICE * :Need more parameters\r\n");
+        return;
+    }
+
+    std::string chanName = args[0];
+    std::string partMsg = (args.size() >= 2) ? args[1] : "";
+
+    std::map<std::string, Channel>::iterator it = _channels.find(chanName);
+    if (it == _channels.end())
+    {
+        sendTo(c, ":server NOTICE * :No such channel\r\n");
+        return;
+    }
+    Channel& ch = it->second;
+
+    if (!ch.isMember(&c))
+    {
+        sendTo(c, ":server NOTICE * :You're not on that channel\r\n");
+        return;
+    }
+
+    std::string msg = ":" + c.nickname + "!" + c.username + "@host PART " + chanName;
+    if (!partMsg.empty())
+        msg += " :" + partMsg;
+    msg += "\r\n";
+    broadcastToChannel(chanName, msg, -1);
+
+    ch.removeMember(&c);
+    c.joinedChannels.erase(chanName);
+
+    if (ch.memberCount() == 0)
+        _channels.erase(it);
 }

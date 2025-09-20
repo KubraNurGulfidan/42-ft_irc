@@ -1,5 +1,7 @@
 #include "server/Server.hpp"
-#include "utils/utils.hpp"
+#include "utils/Utils.hpp"
+#include <iostream>
+#include <cstdlib>
 
 int main(int ac, char **av)
 {
@@ -20,7 +22,7 @@ int main(int ac, char **av)
 	}
 	try
 	{
-		Server srv(av[1], av[2]);
+		Server srv(atoi(av[1]), av[2]);
 		srv.run();
 	}
 	catch(const std::exception& e)

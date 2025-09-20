@@ -1,5 +1,5 @@
 #include "Channel.hpp"
-#include "client/Client.hpp"
+#include "../client/Client.hpp"
 
 Channel::Channel() : inviteOnly(false), topicRestricted(false), userLimit(-1) {}
 Channel::Channel(const std::string& n) : _name(n), inviteOnly(false), topicRestricted(false), userLimit(-1) {}

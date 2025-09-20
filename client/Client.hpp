@@ -7,6 +7,8 @@
 
 class Client
 {
+	private:
+		int _fd;
 	public:
 		Client();
 		explicit Client(int fd);
@@ -32,8 +34,6 @@ class Client
 		bool hasPendingWrite() const;
 		std::string& frontOut();
 		void popFrontOut();
-	private:
-		int _fd;
 };
 
 #endif

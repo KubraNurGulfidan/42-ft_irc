@@ -9,6 +9,10 @@ class Client;
 
 class Channel
 {
+	private:
+		std::string _name;
+		std::set<Client*> _members;
+		std::set<Client*> _operators;
 	public:
 		Channel();
 		explicit Channel(const std::string& name);
@@ -36,10 +40,6 @@ class Channel
 		void membersSnapshot(std::set<Client*>& out) const;
 
 		std::size_t memberCount() const;
-	private:
-		std::string _name;
-		std::set<Client*> _members;
-		std::set<Client*> _operators;
 };
 
 #endif
