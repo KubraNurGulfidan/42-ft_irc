@@ -133,20 +133,22 @@ void Server::handleClientRead(int fd)
         return;
     Client &c = it->second;
     char buf[4096];
-    while (true)
+    ssize_t r = recv(fd, buf, sizeof(buf), 0);
+    if (r > 0)
+        c.inputBuffer.append(buf, r);
+    else if (r == 0)
     {
-        ssize_t r = recv(fd, buf, sizeof(buf), 0);
-        if (r > 0)
-            c.inputBuffer.append(buf, r);
-        else if (r == 0)
+        disconnectClient(fd, "client closed");
+        return;
+    }
+    else
+    {
+        if (errno == EAGAIN || errno == EWOULDBLOCK)
         {
-            disconnectClient(fd, "client closed");
-            return;
+            // No data available, this is normal for non-blocking socket
         }
         else
         {
-            if (errno == EAGAIN || errno == EWOULDBLOCK)
-                break;
             disconnectClient(fd, "recv error");
             return;
         }
@@ -312,9 +314,15 @@ void Server::dispatchCommand(Client& c, const std::string& line)
         cmdJOIN(c, args);
     else if (cmd == "PART")
         cmdPART(c, args);
+    else if (cmd == "PING")
+        sendTo(c, "PONG :" + (args.empty() ? "" : args[0]) + "\r\n");
+    else if (cmd == "CAP")
+        ;
+    else if (cmd == "WHOIS")
+        sendTo(c, ":server 401 " + c.nickname + " " + (args.empty() ? "" : args[0]) + "\r\n");
     //kanal komutları join part topic mode invite kick sonraki aşamalarda eklenecek
     else
-        sendTo(c, ":server NOTICE * :Unknow Command\r\n");
+        sendTo(c, ":server NOTICE * :Unknown Command\r\n");
 }
 
 void Server::sendTo(Client& c, const std::string& msg)
