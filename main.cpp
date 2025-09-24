@@ -15,7 +15,8 @@
 #include "client/Client.hpp"
 #include "channel/Channel.hpp"
 
-int main() {
+int main() 
+{
     // 1) Client oluştur
     Client alice(1);
     Client bob(2);
@@ -108,10 +109,11 @@ int main() {
 
 	std::cout << "------------------------" << std::endl;
 
-	std::string input = ":Alice!user@host PRIVMSG #general :Hello everyone";
+	std::string input = "MODE #kanal +k secret123";
     std::string command;
 
-    parseIRCMessage(input, command, params);
+    parseIRCMessage(input, params, command);
+	server.commandHandler(command, params, alice);
 
     std::cout << "Command: " << command << std::endl;
     for (size_t i = 0; i < params.size(); ++i) {

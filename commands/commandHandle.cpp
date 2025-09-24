@@ -1,10 +1,10 @@
 #include "../server/Server.hpp"
 
-void parseIRCMessage(const std::string &input, std::string &command, std::vector<std::string> &params)
+void parseIRCMessage(const std::string &input, std::vector<std::string>& params, std::string &command)
 {
 	params.clear();
 	std::string line = input;
-
+	
 	if (!line.empty() && line[0] == ':')
 	{
 		size_t spacePos = line.find(' ');
@@ -35,8 +35,8 @@ void parseIRCMessage(const std::string &input, std::string &command, std::vector
 
 void Server::commandHandler(std::string cmd, std::vector<std::string> params, Client &client)
 {
-	// if (cmd == "INVITE")
-	// 	Invite(params, client);
+	if (cmd == "INVITE")
+		Invite(params, client);
 	// else if (cmd == "JOIN")
 	// 	Join(params, client);
 	// else if (cmd == "KICK")
@@ -51,8 +51,8 @@ void Server::commandHandler(std::string cmd, std::vector<std::string> params, Cl
 	// 	Notice(params, client);
 	// else if (cmd == "PART")
 	// 	Part(params, client);
-	// else if (cmd == "PASS")
-	// 	Pass(params, client);
+	else if (cmd == "PASS")
+		Pass(params, client);
 	// else if(cmd == "PRIVMSG")
 	// 	Privmsg(params, client);
 	// else if (cmd == "QUIT")
@@ -63,12 +63,10 @@ void Server::commandHandler(std::string cmd, std::vector<std::string> params, Cl
 	// 	User(params, client);
 	// else if(cmd == "WHO")
 	// 	Who(params, client);
-	// else
+	else
 	{
 		std::string msg = "421 " + client.getNickname() + " " + cmd + " :Unknown command\r\n";
 		// send(client.getFd(), msg.c_str(), msg.size(), 0);
 		std::cout << msg << std::endl;
 	}
-	(void)params;
-	
 }

@@ -12,10 +12,12 @@ class Client
 	private:
 		int fd;
 		bool loggedIn;
-		std::string nickname;
-		std::string username;
-		std::string realname;
-		std::string hostname;
+		bool passGiven; //
+		std::string nickname; //
+		std::string username; //
+		std::string hostname; //
+		std::string servername; //
+		std::string realname; //
 		std::vector<Channel *> channels;
 		
 	public:
@@ -24,17 +26,21 @@ class Client
 
 		void setFd(int _fd);
 		void setLoggedIn(bool sign);
+		void setPassGiven(bool sign);
 		void setNickname(const std::string& _nickname);
 		void setUsername(const std::string& _username);
-		void setRealname(const std::string& _realname);
 		void setHostname(const std::string& _hostname);
+		void setServername(const std::string& _servername);
+		void setRealname(const std::string& _realname);
 
 		int getFd() const;
 		bool getLoggedIn() const;
+		bool getPassGiven() const;
 		const std::string& getNickname() const;
 		const std::string& getUsername() const;
-		const std::string& getRealname() const;
 		const std::string& getHostname() const;
+		const std::string& getServername() const;
+		const std::string& getRealname() const;
         const std::vector<Channel *>& getChannels() const;
 
 		void addChannel(Channel* channel);
