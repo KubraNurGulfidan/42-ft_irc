@@ -20,16 +20,15 @@ void parseIRCMessage(const std::string &input, std::vector<std::string>& params,
 	{
 		if (param[0] == ':')
 		{
-            // Trailing parametre: tüm geri kalan
-            std::string trailing = param.substr(1);
-            std::string rest;
-            getline(iss, rest);
-            trailing += rest;
-            params.push_back(trailing);
-            break;
-        }
+			std::string trailing = param.substr(1);
+			std::string rest;
+			getline(iss, rest);
+			trailing += rest;
+			params.push_back(trailing);
+			break;
+		}
 		else
-            params.push_back(param);
+			params.push_back(param);
 	}
 }
 
@@ -66,7 +65,6 @@ void Server::commandHandler(std::string cmd, std::vector<std::string> params, Cl
 	else
 	{
 		std::string msg = "421 " + client.getNickname() + " " + cmd + " :Unknown command\r\n";
-		// send(client.getFd(), msg.c_str(), msg.size(), 0);
-		std::cout << msg << std::endl;
+		send(client.getFd(), msg.c_str(), msg.size(), 0);
 	}
 }

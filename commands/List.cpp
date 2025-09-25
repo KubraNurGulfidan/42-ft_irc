@@ -5,8 +5,7 @@
 void Server::List(std::vector<std::string> params, Client &client)
 {
 	std::string header = "321 " + client.getNickname() + " Channel :Users  Name\r\n";
-	std::cout << header;
-	// send(client.getFd(), header.c_str(), header.size(), 0);
+	send(client.getFd(), header.c_str(), header.size(), 0);
 
 	if (params.empty()) 
 	{
@@ -19,7 +18,7 @@ void Server::List(std::vector<std::string> params, Client &client)
                 << " " << channel->getMembers().size() 
                 << " :" << channel->getTopic() << "\r\n";
 			std::string msg = oss.str();
-			// send(client.getFd(), msg.c_str(), msg.size(), 0);
+			send(client.getFd(), msg.c_str(), msg.size(), 0);
         }
 	}
 	else
@@ -36,11 +35,10 @@ void Server::List(std::vector<std::string> params, Client &client)
                     << " " << channel->getMembers().size() 
                     << " :" << channel->getTopic() << "\r\n";
                 std::string msg = oss.str();
-				// send(client.getFd(), msg.c_str(), msg.size(), 0);
+				send(client.getFd(), msg.c_str(), msg.size(), 0);
 			}
         }
 	}
 	std::string endMsg = "323 " + client.getNickname() + " :End of /LIST\r\n";
-    std::cout << endMsg;
-	// send(client.getFd(), endMsg.c_str(), endMsg.size(), 0);
+	send(client.getFd(), endMsg.c_str(), endMsg.size(), 0);
 }

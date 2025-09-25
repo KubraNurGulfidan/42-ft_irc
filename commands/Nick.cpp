@@ -34,16 +34,14 @@ void Server::Nick(std::vector<std::string> params, Client &client)
 	if (params.empty()) 
 	{
 		std::string msg = "461 NICK :No nickname given\r\n";
-		// send(client.getFd(), msg.c_str(), msg.size(), 0);
-		std::cout << msg << std::endl;
+		send(client.getFd(), msg.c_str(), msg.size(), 0);
 		return;
 	}
 	
 	if (!client.getPassGiven())
 	{
 		std::string msg = "464 :Password required\r\n";
-		// send(client.getFd(), msg.c_str(), msg.size(), 0);
-		std::cout << msg << std::endl;
+		send(client.getFd(), msg.c_str(), msg.size(), 0);
 		return;
 	}
 	
@@ -52,16 +50,14 @@ void Server::Nick(std::vector<std::string> params, Client &client)
 	if(invalidNick(nick))
 	{
 		std::string msg = "432 " + nick + " :Erroneous nickname\r\n";
-		// send(client.getFd(), msg.c_str(), msg.size(), 0);
-		std::cout << msg << std::endl;
+		send(client.getFd(), msg.c_str(), msg.size(), 0);
 		return;
 	}
 
 	if(alreadyUseNick(nick))
 	{
 		std::string msg = "433 " + nick + " :Nickname is already in use\r\n";
-		// send(client.getFd(), msg.c_str(), msg.size(), 0);
-		std::cout << msg << std::endl;
+		send(client.getFd(), msg.c_str(), msg.size(), 0);
 		return;
 	}
 

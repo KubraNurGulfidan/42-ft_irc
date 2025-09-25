@@ -10,6 +10,7 @@
 # include <vector>
 # include <algorithm>
 # include <unistd.h>
+# include <cstdio>
 # include <sys/socket.h> 
 
 
@@ -49,6 +50,11 @@ class Server
 		Client* getClientByNick(const std::string& nickname);
 		Channel* getChannelByName(const std::string& name);
 		void removeClient(Client* client);
+
+		void handleClient(Client* client);
+		void start();
+		void acceptClient();
+
 };
 
 void parseIRCMessage(const std::string &input, std::vector<std::string>& params, std::string &command);

@@ -12,8 +12,7 @@ void Server::Mode(std::vector<std::string> params, Client &client)
 	if (params.size() < 2) 
 	{
 		std::string msg = "461 " + client.getNickname() + "MODE :Not enough parameters\r\n";
-		// send(client.getFd(), msg.c_str(), msg.size(), 0);
-		std::cout << msg << std::endl;
+		send(client.getFd(), msg.c_str(), msg.size(), 0);
         return;
 	}
 
@@ -22,24 +21,21 @@ void Server::Mode(std::vector<std::string> params, Client &client)
 	if (!newChannel)
 	{
 		std::string msg = "403 " + client.getNickname() + " " + channelName + " :No such channel\r\n";
-		// send(client.getFd(), msg.c_str(), msg.size(), 0);
-		std::cout << msg << std::endl;
+		send(client.getFd(), msg.c_str(), msg.size(), 0);
 		return;
 	}
 
 	if(!newChannel->hasMember(&client))
 	{
 		std::string msg = "442 " + client.getNickname() + " " + channelName + " :Not on channel\r\n";
-		// send(client.getFd(), msg.c_str(), msg.size(), 0);
-		std::cout << msg << std::endl;
+		send(client.getFd(), msg.c_str(), msg.size(), 0);
 		return;
 	}
 
 	if(!newChannel->hasAdmin(&client))
 	{
 		std::string msg = "482 " + client.getNickname() + " " + channelName + " :Not channel operator\r\n";
-		// send(client.getFd(), msg.c_str(), msg.size(), 0);
-		std::cout << msg << std::endl;
+		send(client.getFd(), msg.c_str(), msg.size(), 0);
 		return;
 	}
 
@@ -75,8 +71,7 @@ void Server::Mode(std::vector<std::string> params, Client &client)
 	else
 	{
 		std::string msg = "472 " + client.getNickname() + " " + channelName + " :is unknown mode char\r\n";
-		// send(client.getFd(), msg.c_str(), msg.size(), 0);
-		std::cout << msg << std::endl;
+		send(client.getFd(), msg.c_str(), msg.size(), 0);
 		return;
 	}
 
