@@ -49,6 +49,8 @@ class Server
 		void cmdMODE(Client& c, const std::vector<std::string>& args);
 		void cmdINVITE(Client& c, const std::vector<std::string>& args);
 		void cmdKICK(Client& c, const std::vector<std::string>& args);
+		void cmdLIST(Client& c, const std::vector<std::string>& args);
+		void cmdWHO(Client& c, const std::vector<std::string>& args);
 	//Utilities
 		void sendTo(Client& c, const std::string& msg);
 		void sendToFd(int fd, const std::string& msg);
