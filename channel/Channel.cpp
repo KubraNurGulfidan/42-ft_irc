@@ -1,4 +1,4 @@
-#include "Channel.hpp"
+# include "Channel.hpp"
 # include "../client/Client.hpp"
 
 Channel::Channel(const std::string& _channelName)
@@ -107,3 +107,13 @@ bool Channel::hasInvited(Client* client) const
 	std::vector<Client*>::const_iterator it = std::find(invitedClients.begin(), invitedClients.end(), client);
 	return (it != invitedClients.end());
 }
+
+void Channel::broadcast(const std::string &msg, int senderFd)
+{
+    for (size_t i = 0; i < members.size(); i++)
+	{
+        if (members[i]->getFd() != senderFd) 
+            send(members[i]->getFd(), msg.c_str(), msg.size(), 0);
+    }
+}
+

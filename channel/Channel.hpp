@@ -4,6 +4,7 @@
 # include <vector>
 # include <algorithm>
 # include <iostream>
+# include <sys/socket.h> 
 
 class Client;
 
@@ -51,6 +52,8 @@ class Channel
 		bool hasMember(Client* client) const;
 		bool hasAdmin(Client* client) const;
 		bool hasInvited(Client* client) const;
+
+		void broadcast(const std::string &msg, int senderFd);
 };
 
 #endif

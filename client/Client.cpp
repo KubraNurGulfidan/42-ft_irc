@@ -43,3 +43,8 @@ bool Client::isInChannel(Channel* channel) const
     std::vector<Channel*>::const_iterator it = std::find(channels.begin(), channels.end(), channel);
     return (it != channels.end());
 }
+
+std::string Client::getPrefix() const
+{
+    return getNickname() + "!" + getUsername() + "@" + getHostname();
+}

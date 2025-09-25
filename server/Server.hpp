@@ -16,15 +16,15 @@
 class Server
 {
 	private:
-		int port;
-		int serverFd;
-		std::string password;
+		int _port;
+		int _serverFd;
+		std::string _password;
 		std::map<std::string, Channel*> channels;
 		std::vector<Client*> clients;
 		bool isRun;
 
 	public:
-		Server();
+		Server(int port, const std::string& password);
 		~Server();
 
 		void commandHandler(std::string cmd, std::vector<std::string> params, Client &client);
@@ -34,7 +34,7 @@ class Server
 		void List(std::vector<std::string> params, Client &client);
 		void Mode(std::vector<std::string> params, Client &client);
 		void Nick(std::vector<std::string> params, Client &client);
-		// void Notice(std::vector<std::string> params, Client &client);
+		void Notice(std::vector<std::string> params, Client &client);
 		void Part(std::vector<std::string> params, Client &client);
 		void Pass(std::vector<std::string> params, Client &client);
 		void Privmsg(std::vector<std::string> params, Client &client);
@@ -43,7 +43,7 @@ class Server
 		void User(std::vector<std::string> params, Client &client);
 		void Who(std::vector<std::string> params, Client &client);
 
-		std::string getPassword();
+		std::string getPassword() const;
 		bool alreadyUseNick(std::string nick);
 
 		Client* getClientByNick(const std::string& nickname);

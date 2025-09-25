@@ -1,10 +1,10 @@
 #include "Server.hpp"
 
-Server::Server() {}
+Server::Server(int port, const std::string& password) : _port(port), _serverFd(-1), _password(password), isRun(false) {}
 
 Server::~Server() {}
 
-std::string Server::getPassword() { return password; }
+std::string Server::getPassword() const { return _password; }
 
 bool Server::alreadyUseNick(std::string nick)
 {
@@ -34,36 +34,29 @@ Client* Server::getClientByNick(const std::string& nickname)
     return NULL;
 }
 
-void Server::removeClient(Client* client)
+void Server::removeClient(Client *client)
 {
-    if (!client) return;
-
-    for (std::map<std::string, Channel*>::iterator it = channels.begin(); it != channels.end(); )
+	for (std::map<std::string, Channel*>::iterator it = channels.begin(); it != channels.end(); )
 	{
-        Channel* ch = it->second;
-        if (ch->hasMember(client))
+		Channel* ch = it->second;
+		ch->removeClient(client);
+
+		if (ch->getMembers().empty())
 		{
-            ch->removeClient(client);
-            if (ch->getMembers().empty())
-			{
-                delete ch;
-                it = channels.erase(it);
-                continue;
-            }
-        }
-        ++it;
-    }
+			delete ch;
+			channels.erase(it++);
+		}
+		else
+			++it;
+	}
 
-    for (std::vector<Client*>::iterator itc = clients.begin(); itc != clients.end(); ++itc) {
-        if (*itc == client) {
-            clients.erase(itc);
-            break;
-        }
-    }
-
-    int fd = client->getFd();
-    if (fd >= 0) {
-        close(fd);
-    }
-    delete client;
+	for (std::vector<Client*>::iterator it = clients.begin(); it != clients.end(); ++it)
+	{
+		if (*it == client)
+		{
+			clients.erase(it);
+			break;
+		}
+	}
+	delete client;
 }
