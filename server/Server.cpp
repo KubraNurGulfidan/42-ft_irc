@@ -1,37 +1,48 @@
 #include "Server.hpp"
 
-#include "Server.hpp"
-#include <sys/socket.h>
-#include <arpa/inet.h>
-#include <unistd.h>
-#include <cstring>
-#include <iostream>
-
 Server::Server(int port, const std::string& password) : _port(port), _serverFd(-1), _password(password), isRun(false) {}
 
 Server::~Server()
 {
     if (_serverFd != -1)
         close(_serverFd);
+
     for (size_t i = 0; i < clients.size(); i++)
+    {
         delete clients[i];
+    }
+    clients.clear();
+
     for (std::map<std::string, Channel*>::iterator it = channels.begin(); it != channels.end(); ++it)
+    {
         delete it->second;
+    }
+    channels.clear();
+
+    _pfds.clear();
 }
 
 void Server::handleClient(Client* client)
 {
-    char buffer[1024];
+    char buffer[512];
     memset(buffer, 0, sizeof(buffer));
     int bytesRead = recv(client->getFd(), buffer, sizeof(buffer) - 1, 0);
+    
     if (bytesRead <= 0)
     {
+        if (bytesRead == 0)
+            std::cout << "Client disconnected (fd: " << client->getFd() << ")" << std::endl;
+        else if (errno == EAGAIN || errno == EWOULDBLOCK)
+            return;
+        else
+            perror("recv failed");
+
         removeClient(client);
         return;
     }
 
     std::string message(buffer);
-    std::cout << "Received message: " << message << std::endl;
+    std::cout << "Received message from fd " << client->getFd() << ": " << message << std::endl;
 
     std::vector<std::string> params;
     std::string command;
@@ -41,95 +52,177 @@ void Server::handleClient(Client* client)
 
 void Server::start()
 {
-    // Soket oluşturma
-    _serverFd = socket(AF_INET, SOCK_STREAM, 0);
-    if (_serverFd == -1)
+    if (!setupServer())
+        return;
+    runServer();
+}
+
+void Server::stop()
+{
+    isRun = false;
+}
+
+bool Server::setupServer()
+{
+    int server_socket = socket(AF_INET, SOCK_STREAM, 0);
+    if (server_socket < 0)
     {
         perror("Socket creation failed");
-        exit(EXIT_FAILURE);
+        return false;
     }
-
-    // Adres yapısını ayarlama
+    int opt = 1;
+    if (setsockopt(server_socket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0)
+    {
+        perror("setsockopt SO_REUSEADDR failed");
+        close(server_socket);
+        return false;
+    }
+    if (setsockopt(server_socket, SOL_SOCKET, SO_KEEPALIVE, &opt, sizeof(opt)) < 0)
+    {
+        perror("setsockopt SO_KEEPALIVE failed");
+        close(server_socket);
+        return false;
+    }
+	
     sockaddr_in serverAddr;
     memset(&serverAddr, 0, sizeof(serverAddr));
     serverAddr.sin_family = AF_INET;
     serverAddr.sin_addr.s_addr = INADDR_ANY;
     serverAddr.sin_port = htons(_port);
 
-    // Soketi bağlama
-    if (bind(_serverFd, (struct sockaddr*)&serverAddr, sizeof(serverAddr)) < 0)
+    if (bind(server_socket, (struct sockaddr*)&serverAddr, sizeof(serverAddr)) < 0)
     {
         perror("Bind failed");
-        close(_serverFd);
-        exit(EXIT_FAILURE);
+        close(server_socket);
+        return false;
     }
-
-    // Dinleme
-    if (listen(_serverFd, 10) < 0)
+    if (listen(server_socket, 5) < 0)
     {
         perror("Listen failed");
-        close(_serverFd);
-        exit(EXIT_FAILURE);
+        close(server_socket);
+        return false;
     }
 
+    int flags = fcntl(server_socket, F_GETFL, 0);
+    if (flags < 0 || fcntl(server_socket, F_SETFL, flags | O_NONBLOCK) < 0)
+    {
+        perror("fcntl failed for server socket");
+        close(server_socket);
+        return false;
+    }
+    _serverFd = server_socket;
     isRun = true;
     std::cout << "Server started on port " << _port << std::endl;
+    return true;
+}
 
-    // Olay döngüsü için hazırlık
-    fd_set readFds;
-    int maxFd = _serverFd;
+void Server::runServer()
+{
+	_pfds.clear();
+    pollfd serverPollFd;
+	memset(&serverPollFd, 0, sizeof(serverPollFd));
+    serverPollFd.fd = _serverFd;
+    serverPollFd.events = POLLIN;
+    _pfds.push_back(serverPollFd);
 
     while (isRun)
     {
-        FD_ZERO(&readFds);
-        FD_SET(_serverFd, &readFds);
-
-        // Tüm istemci soketlerini set'e ekle
-        for (size_t i = 0; i < clients.size(); ++i)
-        {
-            int clientFd = clients[i]->getFd();
-            FD_SET(clientFd, &readFds);
-            if (clientFd > maxFd)
-                maxFd = clientFd;
-        }
-
-        // select ile aktif soketleri kontrol et
-        int activity = select(maxFd + 1, &readFds, NULL, NULL, NULL);
+        int activity = poll(_pfds.data(), _pfds.size(), 1000); 
         if (activity < 0)
         {
-            perror("Select failed");
-            continue;
+            perror("poll failed");
+            break;
         }
 
-        // Yeni bağlantıları kabul et
-        if (FD_ISSET(_serverFd, &readFds))
-            acceptClient();
-
-        // Mevcut istemcilerden gelen verileri işle
-        for (size_t i = 0; i < clients.size(); ++i)
+        if (_pfds[0].revents & POLLIN)
         {
-            int clientFd = clients[i]->getFd();
-            if (FD_ISSET(clientFd, &readFds))
-                handleClient(clients[i]);
+            int clientFd = acceptClient();
+            if (clientFd > 0)
+            {
+                pollfd clientPollFd;
+				memset(&clientPollFd, 0, sizeof(clientPollFd));
+                clientPollFd.fd = clientFd;
+                clientPollFd.events = POLLIN;
+                _pfds.push_back(clientPollFd);
+            }
+        }
+
+        for (size_t i = 1; i < _pfds.size(); )
+        {
+            if (_pfds[i].revents & POLLIN)
+            {
+                Client* client = getClientByFd(_pfds[i].fd);
+                if (client)
+                {
+                    handleClient(client);
+                    if (!getClientByFd(_pfds[i].fd))
+                    {
+                        _pfds.erase(_pfds.begin() + i);
+                        continue;
+                    }
+                }
+                else
+                {
+                    _pfds.erase(_pfds.begin() + i);
+                    continue; 
+                }
+            }
+            else if (_pfds[i].revents & (POLLHUP | POLLERR))
+            {
+                Client* client = getClientByFd(_pfds[i].fd);
+                if (client)
+                {
+                    std::cout << "Client connection lost (fd: " << _pfds[i].fd << ")" << std::endl;
+                    removeClient(client);
+                }
+                _pfds.erase(_pfds.begin() + i);
+                continue;
+            }
+            i++;
         }
     }
+    close(_serverFd);
+    _serverFd = -1;
+    isRun = false;
 }
-
-void Server::acceptClient()
+int Server::acceptClient()
 {
     sockaddr_in clientAddr;
     socklen_t clientLen = sizeof(clientAddr);
     int clientFd = accept(_serverFd, (struct sockaddr*)&clientAddr, &clientLen);
     if (clientFd < 0)
     {
+        if (errno == EAGAIN || errno == EWOULDBLOCK)
+            return -1;
         perror("Accept failed");
-        return;
+        return -1;
+    }
+    int flags = fcntl(clientFd, F_GETFL, 0);
+    if (flags < 0 || fcntl(clientFd, F_SETFL, flags | O_NONBLOCK) < 0)
+    {
+        perror("fcntl failed");
+        close(clientFd);
+        return -1;
     }
 
-    std::cout << "New client connected: " << inet_ntoa(clientAddr.sin_addr) << std::endl;
+    std::cout << "New client connected: " << inet_ntoa(clientAddr.sin_addr) << ":" << ntohs(clientAddr.sin_port) << " (fd: " << clientFd << ")" << std::endl;
+
     Client* newClient = new Client(clientFd);
     clients.push_back(newClient);
+
+    return clientFd;
 }
+
+Client* Server::getClientByFd(int fd)
+{
+    for (std::vector<Client*>::iterator it = clients.begin(); it != clients.end(); ++it)
+    {
+        if ((*it)->getFd() == fd)
+            return *it;
+    }
+    return NULL;
+}
+
 
 std::string Server::getPassword() const { return _password; }
 
@@ -163,6 +256,8 @@ Client* Server::getClientByNick(const std::string& nickname)
 
 void Server::removeClient(Client *client)
 {
+	int fd = client->getFd();
+
 	for (std::map<std::string, Channel*>::iterator it = channels.begin(); it != channels.end(); )
 	{
 		Channel* ch = it->second;
@@ -185,5 +280,6 @@ void Server::removeClient(Client *client)
 			break;
 		}
 	}
+	close(fd);
 	delete client;
 }

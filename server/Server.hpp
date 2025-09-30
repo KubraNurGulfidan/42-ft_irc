@@ -1,8 +1,8 @@
 #ifndef SERVER_HPP
 # define SERVER_HPP
 
-#include "../channel/Channel.hpp"
-#include "../client/Client.hpp"
+# include "../channel/Channel.hpp"
+# include "../client/Client.hpp"
 
 # include <iostream>
 # include <sstream>
@@ -11,7 +11,12 @@
 # include <algorithm>
 # include <unistd.h>
 # include <cstdio>
-# include <sys/socket.h> 
+# include <sys/socket.h>
+# include <arpa/inet.h>
+# include <cstring>
+# include <poll.h>
+# include <fcntl.h>
+# include <errno.h>
 
 
 class Server
@@ -19,6 +24,7 @@ class Server
 	private:
 		int _port;
 		int _serverFd;
+		std::vector<pollfd> _pfds;
 		std::string _password;
 		std::map<std::string, Channel*> channels;
 		std::vector<Client*> clients;
@@ -47,14 +53,17 @@ class Server
 		std::string getPassword() const;
 		bool alreadyUseNick(std::string nick);
 
-		Client* getClientByNick(const std::string& nickname);
 		Channel* getChannelByName(const std::string& name);
+		Client* getClientByNick(const std::string& nickname);
+		Client* getClientByFd(int fd);
 		void removeClient(Client* client);
 
 		void handleClient(Client* client);
+		int acceptClient();
 		void start();
-		void acceptClient();
-
+		void stop();
+		bool setupServer();
+		void runServer();
 };
 
 void parseIRCMessage(const std::string &input, std::vector<std::string>& params, std::string &command);

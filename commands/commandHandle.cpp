@@ -34,6 +34,32 @@ void parseIRCMessage(const std::string &input, std::vector<std::string>& params,
 
 void Server::commandHandler(std::string cmd, std::vector<std::string> params, Client &client)
 {
+	if (cmd == "PASS")
+		Pass(params, client);
+	if (cmd == "NICK")
+		Nick(params, client);
+	if (cmd == "USER")
+		User(params, client);
+
+	if (cmd == "INVITE" || cmd == "JOIN" || cmd == "KICK" || cmd == "LIST" || 
+		cmd == "MODE" ||  cmd == "NICK" || cmd == "NOTICE" || cmd == "PART" || 
+		cmd == "PASS" || cmd == "PRIVMSG" || cmd == "QUIT" || cmd == "TOPIC" || 
+		cmd == "WHO" || cmd == "USER")
+	{
+		if (!client.getLoggedIn() && cmd != "NICK" && cmd != "PASS" && cmd != "USER" && cmd != "QUIT")
+		{
+			std::string msg = ":server 462 ----" + client.getNickname() + " :You have not registered\r\n";
+			send(client.getFd(), msg.c_str(), msg.size(), 0);
+			return;
+		}
+	}
+	else
+	{
+		std::string msg = ":server 421 * " + client.getNickname() + " " + cmd + " :Unknown command\r\n";
+		send(client.getFd(), msg.c_str(), msg.size(), 0);
+	}
+
+
 	if (cmd == "INVITE")
 		Invite(params, client);
 	else if (cmd == "JOIN")
@@ -44,27 +70,16 @@ void Server::commandHandler(std::string cmd, std::vector<std::string> params, Cl
 		List(params, client);
 	else if(cmd == "MODE")
 		Mode(params, client);
-	else if (cmd == "NICK")
-		Nick(params, client);
 	else if (cmd == "NOTICE")
 		Notice(params, client);
 	else if (cmd == "PART")
 		Part(params, client);
-	else if (cmd == "PASS")
-		Pass(params, client);
 	else if(cmd == "PRIVMSG")
 		Privmsg(params, client);
 	else if (cmd == "QUIT")
 		Quit(params, client);
 	else if (cmd == "TOPIC")
 		Topic(params, client);
-	else if (cmd == "USER")
-		User(params, client);
 	else if(cmd == "WHO")
 		Who(params, client);
-	else
-	{
-		std::string msg = "421 " + client.getNickname() + " " + cmd + " :Unknown command\r\n";
-		send(client.getFd(), msg.c_str(), msg.size(), 0);
-	}
 }

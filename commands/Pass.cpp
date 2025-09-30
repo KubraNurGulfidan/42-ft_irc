@@ -1,4 +1,5 @@
 // servera bağlanırken şifre gönderir
+// BİTTİ
 
 #include "../server/Server.hpp"
 
@@ -6,24 +7,24 @@ void Server::Pass(std::vector<std::string> params, Client &client)
 {
 	if (params.empty()) 
 	{
-		std::string msg = "461 PASS :Not enough parameters\r\n";
+		std::string msg = ":server :server 461 * PASS :Not enough parameters\r\n";
 		send(client.getFd(), msg.c_str(), msg.size(), 0);
-        return;
+		return;
 	}
 
 	if (client.getLoggedIn())
-    {
-        std::string msg = "462 " + client.getNickname() + " :You may not reregister\r\n";
-        send(client.getFd(), msg.c_str(), msg.size(), 0);
-        return;
-    }
+	{
+		std::string msg = ":server 462 * :You are already registered\r\n";
+		send(client.getFd(), msg.c_str(), msg.size(), 0);
+		return;
+	}
 
 	if (params[0] != this->getPassword())
-    {
-        std::string msg = "464 :Password incorrect\r\n";
-        send(client.getFd(), msg.c_str(), msg.size(), 0);
+	{
+		std::string msg = ":server 464 * :Password incorrect\r\n";
+		send(client.getFd(), msg.c_str(), msg.size(), 0);
 		return;
-    }
+	}
 
 	client.setPassGiven(true);
 }

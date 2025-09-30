@@ -4,7 +4,12 @@
 Channel::Channel(const std::string& _channelName)
 	: channelName(_channelName), topic(""), password(""), userLimit(100), inviteOnly(false) {}
 
-Channel::~Channel() {}
+Channel::~Channel()
+{
+	members.clear();
+	admins.clear();
+	invitedClients.clear();
+}
 
 void Channel::setMemebers(std::vector<Client *>& clients) { members = clients; }
 void Channel::setTopic(std::string newTopic) { topic = newTopic; }
@@ -38,10 +43,8 @@ void Channel::addClient(Client* client)
 void Channel::addAdmin(Client* admin)
 {
 	if (admin && std::find(admins.begin(), admins.end(), admin) == admins.end())
-	{
 		admins.push_back(admin);
-		addClient(admin);
-	}
+
 }
 
 void Channel::addInvited(Client* client)

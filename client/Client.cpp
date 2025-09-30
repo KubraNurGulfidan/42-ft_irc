@@ -2,7 +2,10 @@
 
 Client::Client(int _fd): fd(_fd), loggedIn(false)  {}
 
-Client::~Client() {}
+Client::~Client()
+{
+	channels.clear();
+}
 
 void Client::setFd(int _fd) { this->fd = _fd; }
 void Client::setLoggedIn(bool sign) { this->loggedIn = sign; }

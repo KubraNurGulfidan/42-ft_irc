@@ -12,12 +12,12 @@ class Client
 	private:
 		int fd;
 		bool loggedIn;
-		bool passGiven; //
-		std::string nickname; //
-		std::string username; //
-		std::string hostname; //
-		std::string servername; //
-		std::string realname; //
+		bool passGiven;
+		std::string nickname;
+		std::string username;
+		std::string hostname;
+		std::string servername;
+		std::string realname;
 		std::vector<Channel *> channels;
 		
 	public:
