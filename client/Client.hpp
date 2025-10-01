@@ -21,6 +21,7 @@ class Client
 		std::vector<Channel *> channels;
 		
 	public:
+		std::string buffer;
 		Client(int _fd);
 		~Client();
 

@@ -5,9 +5,16 @@
 
 void Server::Privmsg(std::vector<std::string> params, Client &client)
 {
-	if (params.size() < 2) 
+	if (params.empty())
 	{
-		std::string msg = ":server 461 * PRIVMSG :Not enough parameters\r\n";
+		std::string msg = ":server 411 " + client.getNickname() + " PRIVMSG :No recipient given\r\n";
+		send(client.getFd(), msg.c_str(), msg.size(), 0);
+		return;
+	}
+	
+	if (params.size() < 2)
+	{
+		std::string msg = ":server 412 " + client.getNickname() + " :No text to send\r\n";
 		send(client.getFd(), msg.c_str(), msg.size(), 0);
 		return;
 	}

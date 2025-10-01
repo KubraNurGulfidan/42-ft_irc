@@ -48,7 +48,7 @@ void Server::commandHandler(std::string cmd, std::vector<std::string> params, Cl
 	{
 		if (!client.getLoggedIn() && cmd != "NICK" && cmd != "PASS" && cmd != "USER" && cmd != "QUIT")
 		{
-			std::string msg = ":server 462 ----" + client.getNickname() + " :You have not registered\r\n";
+			std::string msg = ":server 451 " + client.getNickname() + " :You have not registered\r\n";
 			send(client.getFd(), msg.c_str(), msg.size(), 0);
 			return;
 		}
@@ -82,4 +82,8 @@ void Server::commandHandler(std::string cmd, std::vector<std::string> params, Cl
 		Topic(params, client);
 	else if(cmd == "WHO")
 		Who(params, client);
+	else if(cmd == "PING")
+		Ping(params, client);
+	else if(cmd == "PONG")
+		Pong(params, client);
 }

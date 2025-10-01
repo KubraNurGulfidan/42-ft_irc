@@ -11,6 +11,9 @@ bool invalidNick(std::string nick)
 	if(nick.size() > 9)
 		return true;
 
+	if (nick[0] == ':')
+        return true;
+
 	char first = nick[0];
 	if(!isalpha(first) && first != '[' && first != ']' &&
 		first != '\\' && first != '`' && first != '_' &&
@@ -21,6 +24,10 @@ bool invalidNick(std::string nick)
 	for (size_t i = 1; i < nick.size(); i++)
 	{
 		char c = nick[i];
+		if (isspace(static_cast<unsigned char>(c)))
+			return true;
+		if (c == ',' || c == '*' || c == '?' || c == '!' || c == '@')
+            return true;
 		if(!isalnum(c) && c != '-' && c != '[' && c != ']' &&
 			c != '\\' && c != '`' && c != '_' &&
 			c != '^' && c != '{' && c != '|' && c != '}')
@@ -37,27 +44,27 @@ void Server::Nick(std::vector<std::string> params, Client &client)
 		std::string msg = ":server 431 * NICK :No nickname given\r\n";
 		send(client.getFd(), msg.c_str(), msg.size(), 0);
 		return;
-	}
-	
-	if (!client.getPassGiven())
-	{
-		std::string msg = ":server 464 * :Password required\r\n";
-		send(client.getFd(), msg.c_str(), msg.size(), 0);
-		return;
-	}
+	}	
 	
 	std::string nick = params[0];
-
+	
 	if(invalidNick(nick))
 	{
 		std::string msg = ":server 432 " + nick + " :Erroneous nickname\r\n";
 		send(client.getFd(), msg.c_str(), msg.size(), 0);
 		return;
 	}
-
+	
 	if(alreadyUseNick(nick))
 	{
 		std::string msg = ":server 433 " + nick + " :Nickname is already in use\r\n";
+		send(client.getFd(), msg.c_str(), msg.size(), 0);
+		return;
+	}
+	
+	if (!client.getPassGiven())
+	{
+		std::string msg = ":server 464 * :Password required\r\n";
 		send(client.getFd(), msg.c_str(), msg.size(), 0);
 		return;
 	}
@@ -67,7 +74,7 @@ void Server::Nick(std::vector<std::string> params, Client &client)
 	if (!oldNick.empty())
 	{
 		std::string nickChangeMsg = ":" + oldNick + "!" + client.getUsername() + "@" + client.getHostname() + " NICK :" + nick + "\r\n";
-
+		
 		std::vector<Channel*> chans = client.getChannels();
 		if (chans.empty())
 		{

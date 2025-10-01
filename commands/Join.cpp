@@ -35,7 +35,7 @@ void Server::Join(std::vector<std::string> params, Client &client)
 		return;
 	}
 
-	if (newChannel->getMembers().size() >= static_cast<size_t>(newChannel->getUserLimit()))
+	if (newChannel->getMembers().size() == static_cast<size_t>(newChannel->getUserLimit()))
 	{
 		std::string msg = ":server 471 " + client.getNickname() + " " + newChannel->getChannelName() + " :Channel is full\r\n";
 		send(client.getFd(), msg.c_str(), msg.size(), 0);

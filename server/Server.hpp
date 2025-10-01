@@ -49,6 +49,8 @@ class Server
 		void Topic(std::vector<std::string> params, Client &client);
 		void User(std::vector<std::string> params, Client &client);
 		void Who(std::vector<std::string> params, Client &client);
+		void Ping(std::vector<std::string> params, Client &client);
+		void Pong(std::vector<std::string> params, Client &client);
 
 		std::string getPassword() const;
 		bool alreadyUseNick(std::string nick);

@@ -3,8 +3,8 @@ NAME = ircserv
 SRCS = 	main.cpp channel/Channel.cpp client/Client.cpp server/Server.cpp \
 		commands/commandHandle.cpp commands/Invite.cpp commands/Join.cpp \
 		commands/Kick.cpp commands/List.cpp commands/Mode.cpp commands/Nick.cpp \
-		commands/Notice.cpp commands/Part.cpp commands/Pass.cpp commands/Privmsg.cpp \
-		commands/Quit.cpp commands/Topic.cpp commands/User.cpp commands/Who.cpp
+		commands/Notice.cpp commands/Part.cpp commands/Pass.cpp commands/PingPong.cpp \
+		commands/Privmsg.cpp commands/Quit.cpp commands/Topic.cpp commands/User.cpp commands/Who.cpp
 
 
 OBJS = $(SRCS:.cpp=.o)

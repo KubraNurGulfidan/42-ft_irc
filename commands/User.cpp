@@ -37,7 +37,6 @@ void Server::User(std::vector<std::string> params, Client &client)
 	client.setHostname(params[1]);
 	client.setServername(params[2]);
 	client.setRealname(params[3]);
-	client.setLoggedIn(true);
 	
 	std::string welcomeMsg = ":server 001 " + client.getNickname() + " :Welcome to the IRC Network\r\n";
 	send(client.getFd(), welcomeMsg.c_str(), welcomeMsg.size(), 0);
@@ -45,4 +44,6 @@ void Server::User(std::vector<std::string> params, Client &client)
 	send(client.getFd(), hostMsg.c_str(), hostMsg.size(), 0);
 	std::string createdMsg = ":server 003 " + client.getNickname() + " :This server was created today\r\n";
 	send(client.getFd(), createdMsg.c_str(), createdMsg.size(), 0);
+	
+	client.setLoggedIn(true);
 }
