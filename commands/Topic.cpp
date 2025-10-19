@@ -28,7 +28,10 @@ void Server::Topic(std::vector<std::string> params, Client &client)
 		return;
 	}
 
-	if(!channel->hasAdmin(&client))
+	// Check if topic protection is enabled (+t mode)
+	// If +t mode is active, only operators can change topic
+	// If -t mode is active, everyone can change topic
+	if (channel->isTopicProtected() && !channel->hasAdmin(&client))
 	{
 		std::string msg = ":server 482 " + client.getNickname() + " " + channelName + " :You're not channel operator\r\n";
 		send(client.getFd(), msg.c_str(), msg.size(), 0);

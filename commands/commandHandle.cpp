@@ -30,6 +30,52 @@ void parseIRCMessage(const std::string &input, std::vector<std::string>& params,
 		else
 			params.push_back(param);
 	}
+	
+	if (command == "JOIN" || command == "PART" || command == "KICK" || command == "MODE")
+	{
+		if (!params.empty())
+		{
+			std::string firstParam = params[0];
+			std::vector<std::string> splitParams;
+			
+			size_t start = 0;
+			size_t commaPos = firstParam.find(',');
+			
+			while (commaPos != std::string::npos)
+			{
+				splitParams.push_back(firstParam.substr(start, commaPos - start));
+				start = commaPos + 1;
+				commaPos = firstParam.find(',', start);
+			}
+			splitParams.push_back(firstParam.substr(start));
+			
+			params.erase(params.begin());
+			params.insert(params.begin(), splitParams.begin(), splitParams.end());
+		}
+	}
+	
+	if (command == "USER" && params.size() >= 4)
+	{
+		std::string originalLine = input;
+		if (!originalLine.empty() && originalLine[0] == ':')
+		{
+			size_t spacePos = originalLine.find(' ');
+			if (spacePos != std::string::npos)
+				originalLine = originalLine.substr(spacePos + 1);
+		}
+		
+		std::istringstream originalIss(originalLine);
+		std::string cmd;
+		originalIss >> cmd;
+		std::string p1, p2, p3, p4;
+		originalIss >> p1 >> p2 >> p3 >> p4;
+		
+		if (p4.empty() || p4[0] != ':')
+		{
+			params.clear();
+			params.push_back("INVALID");
+		}
+	}
 }
 
 void Server::commandHandler(std::string cmd, std::vector<std::string> params, Client &client)
@@ -43,8 +89,8 @@ void Server::commandHandler(std::string cmd, std::vector<std::string> params, Cl
 
 	if (cmd == "INVITE" || cmd == "JOIN" || cmd == "KICK" || cmd == "LIST" || 
 		cmd == "MODE" ||  cmd == "NICK" || cmd == "NOTICE" || cmd == "PART" || 
-		cmd == "PASS" || cmd == "PRIVMSG" || cmd == "QUIT" || cmd == "TOPIC" || 
-		cmd == "WHO" || cmd == "USER")
+		cmd == "PASS" || cmd == "PING" || cmd == "PONG" || cmd == "CAP" ||
+		cmd == "PRIVMSG" || cmd == "QUIT" || cmd == "TOPIC" || cmd == "WHO" || cmd == "USER")
 	{
 		if (!client.getLoggedIn() && cmd != "NICK" && cmd != "PASS" && cmd != "USER" && cmd != "QUIT")
 		{
@@ -86,4 +132,6 @@ void Server::commandHandler(std::string cmd, std::vector<std::string> params, Cl
 		Ping(params, client);
 	else if(cmd == "PONG")
 		Pong(params, client);
+	else if(cmd == "CAP")
+		;
 }

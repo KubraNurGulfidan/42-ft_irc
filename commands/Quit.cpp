@@ -23,10 +23,11 @@ void Server::Quit(std::vector<std::string> params, Client &client)
 		}
 		channel->removeClient(&client);
 
+		std::string channelName = channel->getChannelName();
 		if (channel->getMembers().empty())
 		{
+			channels.erase(channelName);
 			delete channel;
-			channels.erase(channel->getChannelName());
 		}
 	}
 

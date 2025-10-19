@@ -2,7 +2,7 @@
 # include "../client/Client.hpp"
 
 Channel::Channel(const std::string& _channelName)
-	: channelName(_channelName), topic(""), password(""), userLimit(100), inviteOnly(false) {}
+	: channelName(_channelName), topic(""), password(""), userLimit(100), inviteOnly(false), topicProtected(true) {}
 
 Channel::~Channel()
 {
@@ -16,6 +16,7 @@ void Channel::setTopic(std::string newTopic) { topic = newTopic; }
 void Channel::setPassword(std::string newPassword) { password = newPassword; }
 void Channel::setUserLimit(int limit) { userLimit = limit; }
 void Channel::setInviteOnly(bool value) { inviteOnly = value; }
+void Channel::setTopicProtected(bool value) { topicProtected = value; }
 
 std::vector<Client *>& Channel::getMembers() { return members; }
 std::vector<Client *>& Channel::getAdmins() { return admins; }
@@ -25,6 +26,7 @@ std::string Channel::getPassword() { return password; }
 int Channel::getUserLimit() const { return userLimit; }
 
 bool Channel::isInviteOnly() const { return inviteOnly; }
+bool Channel::isTopicProtected() const { return topicProtected; }
 
 void Channel::addClient(Client* client)
 {
@@ -52,7 +54,7 @@ void Channel::addInvited(Client* client)
 	if (client && std::find(invitedClients.begin(), invitedClients.end(), client) == invitedClients.end())
 	{
 		invitedClients.push_back(client);
-		addClient(client);
+		// Don't automatically add client to channel - they need to JOIN manually
 	}
 }
 

@@ -103,13 +103,15 @@ bool Server::setupServer()
         return false;
     }
 
-    int flags = fcntl(server_socket, F_GETFL, 0);
-    if (flags < 0 || fcntl(server_socket, F_SETFL, flags | O_NONBLOCK) < 0)
+    //int flags = fcntl(server_socket, F_GETFL, 0);
+
+	if(fcntl(server_socket, F_SETFL, O_NONBLOCK) < 0)
     {
         perror("fcntl failed for server socket");
         close(server_socket);
         return false;
     }
+	
     _serverFd = server_socket;
     isRun = true;
     std::cout << "Server started on port " << _port << std::endl;
@@ -197,8 +199,8 @@ int Server::acceptClient()
         perror("Accept failed");
         return -1;
     }
-    int flags = fcntl(clientFd, F_GETFL, 0);
-    if (flags < 0 || fcntl(clientFd, F_SETFL, flags | O_NONBLOCK) < 0)
+    //int flags = fcntl(clientFd, F_GETFL, 0);
+	if(fcntl(clientFd, F_SETFL, O_NONBLOCK) < 0)
     {
         perror("fcntl failed");
         close(clientFd);

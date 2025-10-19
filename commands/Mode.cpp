@@ -66,17 +66,9 @@ void Server::Mode(std::vector<std::string> params, Client &client)
 	else if (mode == "-i")
 		newChannel->setInviteOnly(false);
 	else if (mode == "+t")
-	{
-		if (params.size() < 3)
-		{
-			std::string msg = ":server 461 " + client.getNickname() + " MODE " + channelName + " :Not enough parameters\r\n";
-			send(client.getFd(), msg.c_str(), msg.size(), 0);
-			return;
-		}
-		newChannel->setTopic(params[2]);
-	}
+		newChannel->setTopicProtected(true);
 	else if (mode == "-t")
-		newChannel->removeTopic();
+		newChannel->setTopicProtected(false);
 	else if (mode == "+k")
 	{
 		if (params.size() < 3)

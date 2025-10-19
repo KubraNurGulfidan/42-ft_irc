@@ -19,6 +19,7 @@ class Channel
 		std::string password;
 		int userLimit;
 		bool inviteOnly;
+		bool topicProtected;
 
 	public:
 		Channel(const std::string& _channelName);
@@ -29,6 +30,7 @@ class Channel
 		void setUserLimit(int limit);
 		void setInviteOnly(bool value);
 		void setPassword(std::string newPassword);
+		void setTopicProtected(bool value);
 		
 		std::vector<Client *>& getMembers();
 		std::vector<Client *>& getAdmins();
@@ -38,6 +40,7 @@ class Channel
 		int getUserLimit() const;
 		
 		bool isInviteOnly() const;
+		bool isTopicProtected() const;
 
 		void addClient(Client* client);
 		void addAdmin(Client* admin);

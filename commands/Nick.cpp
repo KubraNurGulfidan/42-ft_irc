@@ -92,9 +92,9 @@ void Server::Nick(std::vector<std::string> params, Client &client)
 			}
 		}
 	}
-	else
-	{
-		std::string welcome = ":server 001 " + nick + " :Welcome to the IRC server\r\n";
-		send(client.getFd(), welcome.c_str(), welcome.size(), 0);
-	}
+	// else
+	// {
+	// 	std::string welcome = ":server 001 " + nick + " :Welcome to the IRC server\r\n";
+	// 	send(client.getFd(), welcome.c_str(), welcome.size(), 0);
+	// }
 }

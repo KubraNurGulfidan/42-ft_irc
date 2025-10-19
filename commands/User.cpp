@@ -33,6 +33,7 @@ void Server::User(std::vector<std::string> params, Client &client)
 		return;
 	}
 
+
 	client.setUsername(params[0]);
 	client.setHostname(params[1]);
 	client.setServername(params[2]);
