@@ -1,33 +1,26 @@
 #include "Server.hpp"
-
 Server::Server(int port, const std::string& password) : _port(port), _serverFd(-1), _password(password), isRun(false) {}
-
 Server::~Server()
 {
     if (_serverFd != -1)
         close(_serverFd);
-
     for (size_t i = 0; i < clients.size(); i++)
     {
         delete clients[i];
     }
     clients.clear();
-
     for (std::map<std::string, Channel*>::iterator it = channels.begin(); it != channels.end(); ++it)
     {
         delete it->second;
     }
     channels.clear();
-
     _pfds.clear();
 }
-
 void Server::handleClient(Client* client)
 {
     char buffer[512];
     memset(buffer, 0, sizeof(buffer));
     int bytesRead = recv(client->getFd(), buffer, sizeof(buffer) - 1, 0);
-    
     if (bytesRead <= 0)
     {
         if (bytesRead == 0)
@@ -36,32 +29,37 @@ void Server::handleClient(Client* client)
             return;
         else
             perror("recv failed");
-
         removeClient(client);
         return;
     }
-
-    std::string message(buffer);
-    std::cout << "Received message from fd " << client->getFd() << ": " << message << std::endl;
-
+std::string message(buffer);
+std::cout << "Received message from fd " << client->getFd() << ": " << message << std::endl;
+// Her satırı ayrı komut olarak işle
+std::stringstream ss(message);
+std::string line;
+while (std::getline(ss, line))
+{
+    // Satır sonunda '\r' varsa kaldır
+    if (!line.empty() && line[line.size() - 1] == '\r')
+        line.erase(line.size() - 1);
+    if (line.empty())
+        continue;
     std::vector<std::string> params;
     std::string command;
-    parseIRCMessage(message, params, command);
+    parseIRCMessage(line, params, command);
     commandHandler(command, params, *client);
 }
-
+}
 void Server::start()
 {
     if (!setupServer())
         return;
     runServer();
 }
-
 void Server::stop()
 {
     isRun = false;
 }
-
 bool Server::setupServer()
 {
     int server_socket = socket(AF_INET, SOCK_STREAM, 0);
@@ -83,13 +81,11 @@ bool Server::setupServer()
         close(server_socket);
         return false;
     }
-	
     sockaddr_in serverAddr;
     memset(&serverAddr, 0, sizeof(serverAddr));
     serverAddr.sin_family = AF_INET;
     serverAddr.sin_addr.s_addr = INADDR_ANY;
     serverAddr.sin_port = htons(_port);
-
     if (bind(server_socket, (struct sockaddr*)&serverAddr, sizeof(serverAddr)) < 0)
     {
         perror("Bind failed");
@@ -102,53 +98,46 @@ bool Server::setupServer()
         close(server_socket);
         return false;
     }
-
     //int flags = fcntl(server_socket, F_GETFL, 0);
-
-	if(fcntl(server_socket, F_SETFL, O_NONBLOCK) < 0)
+    if(fcntl(server_socket, F_SETFL, O_NONBLOCK) < 0)
     {
         perror("fcntl failed for server socket");
         close(server_socket);
         return false;
     }
-	
     _serverFd = server_socket;
     isRun = true;
     std::cout << "Server started on port " << _port << std::endl;
     return true;
 }
-
 void Server::runServer()
 {
-	_pfds.clear();
+    _pfds.clear();
     pollfd serverPollFd;
-	memset(&serverPollFd, 0, sizeof(serverPollFd));
+    memset(&serverPollFd, 0, sizeof(serverPollFd));
     serverPollFd.fd = _serverFd;
     serverPollFd.events = POLLIN;
     _pfds.push_back(serverPollFd);
-
     while (isRun)
     {
-        int activity = poll(_pfds.data(), _pfds.size(), 1000); 
+        int activity = poll(_pfds.data(), _pfds.size(), 1000);
         if (activity < 0)
         {
             perror("poll failed");
             break;
         }
-
         if (_pfds[0].revents & POLLIN)
         {
             int clientFd = acceptClient();
             if (clientFd > 0)
             {
                 pollfd clientPollFd;
-				memset(&clientPollFd, 0, sizeof(clientPollFd));
+                memset(&clientPollFd, 0, sizeof(clientPollFd));
                 clientPollFd.fd = clientFd;
                 clientPollFd.events = POLLIN;
                 _pfds.push_back(clientPollFd);
             }
         }
-
         for (size_t i = 1; i < _pfds.size(); )
         {
             if (_pfds[i].revents & POLLIN)
@@ -166,7 +155,7 @@ void Server::runServer()
                 else
                 {
                     _pfds.erase(_pfds.begin() + i);
-                    continue; 
+                    continue;
                 }
             }
             else if (_pfds[i].revents & (POLLHUP | POLLERR))
@@ -200,21 +189,17 @@ int Server::acceptClient()
         return -1;
     }
     //int flags = fcntl(clientFd, F_GETFL, 0);
-	if(fcntl(clientFd, F_SETFL, O_NONBLOCK) < 0)
+    if(fcntl(clientFd, F_SETFL, O_NONBLOCK) < 0)
     {
         perror("fcntl failed");
         close(clientFd);
         return -1;
     }
-
     std::cout << "New client connected: " << inet_ntoa(clientAddr.sin_addr) << ":" << ntohs(clientAddr.sin_port) << " (fd: " << clientFd << ")" << std::endl;
-
     Client* newClient = new Client(clientFd);
     clients.push_back(newClient);
-
     return clientFd;
 }
-
 Client* Server::getClientByFd(int fd)
 {
     for (std::vector<Client*>::iterator it = clients.begin(); it != clients.end(); ++it)
@@ -224,28 +209,23 @@ Client* Server::getClientByFd(int fd)
     }
     return NULL;
 }
-
-
 std::string Server::getPassword() const { return _password; }
-
 bool Server::alreadyUseNick(std::string nick)
 {
-	for (size_t i = 0; i < clients.size(); i++)
-	{
-		if(clients[i]->getNickname() == nick)
-			return true;
-	}
-	return false;	
+    for (size_t i = 0; i < clients.size(); i++)
+    {
+        if(clients[i]->getNickname() == nick)
+            return true;
+    }
+    return false;
 }
-
 Channel* Server::getChannelByName(const std::string& name)
 {
-	std::map<std::string, Channel*>::iterator it = channels.find(name);
-	if (it != channels.end())
-		return it->second;
-	return NULL;
+    std::map<std::string, Channel*>::iterator it = channels.find(name);
+    if (it != channels.end())
+        return it->second;
+    return NULL;
 }
-
 Client* Server::getClientByNick(const std::string& nickname)
 {
     for (std::vector<Client*>::iterator it = clients.begin(); it != clients.end(); ++it)
@@ -255,33 +235,34 @@ Client* Server::getClientByNick(const std::string& nickname)
     }
     return NULL;
 }
-
 void Server::removeClient(Client *client)
 {
-	int fd = client->getFd();
-
-	for (std::map<std::string, Channel*>::iterator it = channels.begin(); it != channels.end(); )
-	{
-		Channel* ch = it->second;
-		ch->removeClient(client);
-
-		if (ch->getMembers().empty())
-		{
-			delete ch;
-			channels.erase(it++);
-		}
-		else
-			++it;
-	}
-
-	for (std::vector<Client*>::iterator it = clients.begin(); it != clients.end(); ++it)
-	{
-		if (*it == client)
-		{
-			clients.erase(it);
-			break;
-		}
-	}
-	close(fd);
-	delete client;
+    int fd = client->getFd();
+    for (std::map<std::string, Channel*>::iterator it = channels.begin(); it != channels.end(); )
+    {
+        Channel* ch = it->second;
+        ch->removeClient(client);
+        if (ch->getMembers().empty())
+        {
+            delete ch;
+            channels.erase(it++);
+        }
+        else
+            ++it;
+    }
+    for (std::vector<Client*>::iterator it = clients.begin(); it != clients.end(); ++it)
+    {
+        if (*it == client)
+        {
+            clients.erase(it);
+            break;
+        }
+    }
+    close(fd);
+    delete client;
 }
+
+
+
+
+

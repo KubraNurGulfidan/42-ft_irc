@@ -12,7 +12,6 @@ void Server::Join(std::vector<std::string> params, Client &client)
 		return;
 	}
 
-	// Process each channel
 	for (size_t i = 0; i < params.size(); ++i)
 	{
 		std::string channelName = params[i];

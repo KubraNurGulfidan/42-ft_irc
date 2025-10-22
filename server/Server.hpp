@@ -35,6 +35,8 @@ class Server
 		~Server();
 
 		void commandHandler(std::string cmd, std::vector<std::string> params, Client &client);
+		void checkRegistration(Client &client);
+		void Cap(std::vector<std::string> params, Client &client);
 		void Invite(std::vector<std::string> params, Client &client);
 		void Join(std::vector<std::string> params, Client &client);
 		void Kick(std::vector<std::string> params, Client &client);
