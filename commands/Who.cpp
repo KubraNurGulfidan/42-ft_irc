@@ -1,19 +1,48 @@
 // kanaldaki kullanıcıların bilgilerini içeren liste oluşturur
-// BİTTİ
+// IRC RFC 1459 standartlarına uygun WHO komutu
 
 #include "../server/Server.hpp"
+
+std::string Server::getMaskedHostname(const std::string& hostname) const
+{
+	// Basit hostname maskeleme - gerçek implementasyonda daha karmaşık olabilir
+	if (hostname.length() > 8)
+		return "*." + hostname.substr(hostname.find('.') + 1);
+	return hostname;
+}
+
+std::string Server::getUserPrefix(Client* user, Channel* channel) const
+{
+	if (!channel)
+		return "";
+	
+	// Kanal operatörü kontrolü
+	if (channel->hasAdmin(user))
+		return "@";
+	
+	// Voice durumu kontrolü (şimdilik basit implementasyon)
+	return "";
+}
 
 void Server::Who(std::vector<std::string> params, Client &client)
 {
 	if (params.empty())
 	{
+		// Tüm sunucu kullanıcılarını listele
 		for (size_t i = 0; i < clients.size(); ++i)
 		{
 			Client* c = clients[i];
+			std::string status = c->getAway() ? "G" : "H"; // G = Gone (away), H = Here
+			if (c->getIsOperator())
+				status += "*"; // Oper durumu
+			
+			std::string maskedHost = getMaskedHostname(c->getHostname());
 			std::string msg = ":server 352 " + client.getNickname() + " * " 
 							+ c->getUsername() + " " 
-							+ c->getHostname() + " "
-							+ c->getNickname() + " H :0 "
+							+ maskedHost + " "
+							+ "server " // servername
+							+ c->getNickname() + " " 
+							+ status + " :0 "
 							+ c->getRealname() + "\r\n";
 			send(client.getFd(), msg.c_str(), msg.size(), 0);
 		}
@@ -33,10 +62,19 @@ void Server::Who(std::vector<std::string> params, Client &client)
 		for (size_t i = 0; i < members.size(); ++i)
 		{
 			Client* c = members[i];
-			std::string msg = ":server 352 " + client.getNickname() + " * " 
+			std::string prefix = getUserPrefix(c, ch);
+			std::string status = c->getAway() ? "G" : "H";
+			if (c->getIsOperator())
+				status += "*";
+			
+			std::string maskedHost = getMaskedHostname(c->getHostname());
+			std::string msg = ":server 352 " + client.getNickname() + " " 
+							+ channelName + " " // kanal adı eklendi
 							+ c->getUsername() + " " 
-							+ c->getHostname() + " "
-							+ c->getNickname() + " H :0 "
+							+ maskedHost + " "
+							+ "server " // servername
+							+ c->getNickname() + " " 
+							+ prefix + status + " :0 "
 							+ c->getRealname() + "\r\n";
 			send(client.getFd(), msg.c_str(), msg.size(), 0);
 		}

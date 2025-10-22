@@ -53,6 +53,10 @@ class Server
 		void Who(std::vector<std::string> params, Client &client);
 		void Ping(std::vector<std::string> params, Client &client);
 		void Pong(std::vector<std::string> params, Client &client);
+		
+		// WHO komutu için yardımcı metodlar
+		std::string getMaskedHostname(const std::string& hostname) const;
+		std::string getUserPrefix(Client* user, Channel* channel) const;
 
 		std::string getPassword() const;
 		bool alreadyUseNick(std::string nick);
