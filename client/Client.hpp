@@ -23,8 +23,15 @@ class Client
 		std::string awayMessage;
 		std::vector<Channel *> channels;
 		
+		time_t lastMessageTime;
+		int messageCount;
+		static const int MAX_MESSAGES_PER_SECOND = 5;
+		
+		std::vector<std::string> pendingMessages;
+		
 	public:
 		std::string buffer;
+		static const int MAX_BUFFER_SIZE = 8192;
 		Client(int _fd);
 		~Client();
 
@@ -57,6 +64,15 @@ class Client
         void removeChannel(Channel* channel);
 		bool isInChannel(Channel* channel) const;
 		std::string getPrefix() const;
+		
+		bool checkFloodProtection();
+		void resetFloodCounter();
+		bool isFlooding() const;
+		
+		void addPendingMessage(const std::string& message);
+		void sendPendingMessages();
+		void clearPendingMessages();
+		bool hasPendingMessages() const;
 };
 
 #endif

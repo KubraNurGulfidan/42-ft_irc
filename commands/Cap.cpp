@@ -18,7 +18,6 @@ void Server::Cap(std::vector<std::string> params, Client &client)
     }
     else if (params[0] == "END")
     {
-        // negotiation bitti, hiçbir şey yapma
         return;
     }
 }

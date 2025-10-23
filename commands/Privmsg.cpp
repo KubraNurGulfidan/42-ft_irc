@@ -1,5 +1,3 @@
-// mesaj göndermek için
-// BİTTİ
 
 #include "../server/Server.hpp"
 

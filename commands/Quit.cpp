@@ -1,5 +1,3 @@
-// bağlantıyı keser
-// BİTTİ
 
 #include "../server/Server.hpp"
 

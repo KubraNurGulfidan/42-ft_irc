@@ -1,5 +1,3 @@
-// kanala mesaj gönderir ama duyuru gibi geri cevap beklenmez
-// BİTTİ
 
 #include "../server/Server.hpp"
 

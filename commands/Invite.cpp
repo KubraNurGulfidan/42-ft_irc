@@ -1,5 +1,3 @@
-//kanala kullanıcı davet etmek için
-// BİTTİ
 
 #include "../server/Server.hpp"
 
@@ -50,7 +48,6 @@ void Server::Invite(std::vector<std::string> params, Client &client)
 		return;
 	}
 
-	// Add the user to the invited list
 	newChannel->addInvited(target);
 
 	std::string inviteMsg = ":" + client.getNickname() + "!" + client.getUsername() +

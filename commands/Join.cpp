@@ -1,5 +1,3 @@
-// bir kanala katılmak için
-// BİTTİ
 
 #include "../server/Server.hpp"
 

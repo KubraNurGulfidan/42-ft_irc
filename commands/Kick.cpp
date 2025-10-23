@@ -1,5 +1,3 @@
-//bir kullanıcıyı kanaldan atmak için
-// BİTTİ
 
 #include "../server/Server.hpp"
 

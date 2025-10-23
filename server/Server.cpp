@@ -1,5 +1,7 @@
 #include "Server.hpp"
+
 Server::Server(int port, const std::string& password) : _port(port), _serverFd(-1), _password(password), isRun(false) {}
+
 Server::~Server()
 {
     if (_serverFd != -1)
@@ -16,6 +18,7 @@ Server::~Server()
     channels.clear();
     _pfds.clear();
 }
+
 void Server::handleClient(Client* client)
 {
     char buffer[512];
@@ -32,34 +35,53 @@ void Server::handleClient(Client* client)
         removeClient(client);
         return;
     }
-std::string message(buffer);
-std::cout << "Received message from fd " << client->getFd() << ": " << message << std::endl;
-// Her satırı ayrı komut olarak işle
-std::stringstream ss(message);
-std::string line;
-while (std::getline(ss, line))
-{
-    // Satır sonunda '\r' varsa kaldır
-    if (!line.empty() && line[line.size() - 1] == '\r')
-        line.erase(line.size() - 1);
-    if (line.empty())
-        continue;
-    std::vector<std::string> params;
-    std::string command;
-    parseIRCMessage(line, params, command);
-    commandHandler(command, params, *client);
+    
+    if (client->buffer.size() + bytesRead > client->MAX_BUFFER_SIZE)
+    {
+        std::cout << "Client " << client->getNickname() << " buffer overflow, disconnecting" << std::endl;
+        removeClient(client);
+        return;
+    }
+    
+    client->buffer.append(buffer, bytesRead);
+    
+    if (!client->checkFloodProtection())
+    {
+        std::cout << "Client " << client->getNickname() << " flooding detected, disconnecting" << std::endl;
+        removeClient(client);
+        return;
+    }
+    
+    size_t pos = 0;
+    while ((pos = client->buffer.find("\r\n")) != std::string::npos)
+    {
+        std::string line = client->buffer.substr(0, pos);
+        client->buffer.erase(0, pos + 2);
+        
+        if (line.empty())
+            continue;
+            
+        std::cout << "Processing complete line: " << line << std::endl;
+        
+        std::vector<std::string> params;
+        std::string command;
+        parseIRCMessage(line, params, command);
+        commandHandler(command, params, *client);
+    }
 }
-}
+
 void Server::start()
 {
     if (!setupServer())
         return;
     runServer();
 }
+
 void Server::stop()
 {
     isRun = false;
 }
+
 bool Server::setupServer()
 {
     int server_socket = socket(AF_INET, SOCK_STREAM, 0);
@@ -98,7 +120,6 @@ bool Server::setupServer()
         close(server_socket);
         return false;
     }
-    //int flags = fcntl(server_socket, F_GETFL, 0);
     if(fcntl(server_socket, F_SETFL, O_NONBLOCK) < 0)
     {
         perror("fcntl failed for server socket");
@@ -110,6 +131,7 @@ bool Server::setupServer()
     std::cout << "Server started on port " << _port << std::endl;
     return true;
 }
+
 void Server::runServer()
 {
     _pfds.clear();
@@ -134,7 +156,7 @@ void Server::runServer()
                 pollfd clientPollFd;
                 memset(&clientPollFd, 0, sizeof(clientPollFd));
                 clientPollFd.fd = clientFd;
-                clientPollFd.events = POLLIN;
+                clientPollFd.events = POLLIN | POLLOUT;
                 _pfds.push_back(clientPollFd);
             }
         }
@@ -158,6 +180,14 @@ void Server::runServer()
                     continue;
                 }
             }
+            else if (_pfds[i].revents & POLLOUT)
+            {
+                Client* client = getClientByFd(_pfds[i].fd);
+                if (client && client->hasPendingMessages())
+                {
+                    client->sendPendingMessages();
+                }
+            }
             else if (_pfds[i].revents & (POLLHUP | POLLERR))
             {
                 Client* client = getClientByFd(_pfds[i].fd);
@@ -176,6 +206,7 @@ void Server::runServer()
     _serverFd = -1;
     isRun = false;
 }
+
 int Server::acceptClient()
 {
     sockaddr_in clientAddr;
@@ -188,7 +219,6 @@ int Server::acceptClient()
         perror("Accept failed");
         return -1;
     }
-    //int flags = fcntl(clientFd, F_GETFL, 0);
     if(fcntl(clientFd, F_SETFL, O_NONBLOCK) < 0)
     {
         perror("fcntl failed");
@@ -200,6 +230,7 @@ int Server::acceptClient()
     clients.push_back(newClient);
     return clientFd;
 }
+
 Client* Server::getClientByFd(int fd)
 {
     for (std::vector<Client*>::iterator it = clients.begin(); it != clients.end(); ++it)
@@ -209,7 +240,9 @@ Client* Server::getClientByFd(int fd)
     }
     return NULL;
 }
+
 std::string Server::getPassword() const { return _password; }
+
 bool Server::alreadyUseNick(std::string nick)
 {
     for (size_t i = 0; i < clients.size(); i++)
@@ -219,6 +252,7 @@ bool Server::alreadyUseNick(std::string nick)
     }
     return false;
 }
+
 Channel* Server::getChannelByName(const std::string& name)
 {
     std::map<std::string, Channel*>::iterator it = channels.find(name);
@@ -226,6 +260,7 @@ Channel* Server::getChannelByName(const std::string& name)
         return it->second;
     return NULL;
 }
+
 Client* Server::getClientByNick(const std::string& nickname)
 {
     for (std::vector<Client*>::iterator it = clients.begin(); it != clients.end(); ++it)
@@ -235,6 +270,7 @@ Client* Server::getClientByNick(const std::string& nickname)
     }
     return NULL;
 }
+
 void Server::removeClient(Client *client)
 {
     int fd = client->getFd();
@@ -261,8 +297,3 @@ void Server::removeClient(Client *client)
     close(fd);
     delete client;
 }
-
-
-
-
-

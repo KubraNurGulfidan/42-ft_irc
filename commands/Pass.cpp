@@ -1,5 +1,3 @@
-// servera bağlanırken şifre gönderir
-// BİTTİ
 
 #include "../server/Server.hpp"
 

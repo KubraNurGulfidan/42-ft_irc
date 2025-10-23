@@ -1,5 +1,3 @@
-// kanaldan ayrılmayı sağlar
-// BİTTİ
 
 #include "../server/Server.hpp"
 

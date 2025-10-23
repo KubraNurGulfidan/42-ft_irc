@@ -1,5 +1,3 @@
-// kullanıcının username, ana makine adı, real name set eder
-// BİTTİ
 
 #include "../server/Server.hpp"
 
@@ -12,19 +10,7 @@ void Server::User(std::vector<std::string> params, Client &client)
 		return;
 	}
 	
-	// if (!client.getPassGiven())
-	// {
-	// 	std::string msg = ":server 464 * :Password required\r\n";
-	// 	send(client.getFd(), msg.c_str(), msg.size(), 0);
-	// 	return;
-	// }
 
-	// if(client.getNickname().empty())
-	// {
-	// 	std::string msg = ":server 451 * :NICK required\r\n";
-	// 	send(client.getFd(), msg.c_str(), msg.size(), 0);
-	// 	return;
-	// }
 
 	if (client.getLoggedIn())
 	{
@@ -38,5 +24,4 @@ void Server::User(std::vector<std::string> params, Client &client)
 	client.setServername(params[2]);
 	client.setRealname(params[3]);
 	
-	// client.setLoggedIn(true);
 }

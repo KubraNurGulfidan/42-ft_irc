@@ -1,5 +1,7 @@
 # include "Channel.hpp"
 # include "../client/Client.hpp"
+# include <errno.h>
+# include <sys/socket.h>
 
 Channel::Channel(const std::string& _channelName)
 	: channelName(_channelName), topic(""), password(""), userLimit(100), inviteOnly(false), topicProtected(true) {}
@@ -54,7 +56,6 @@ void Channel::addInvited(Client* client)
 	if (client && std::find(invitedClients.begin(), invitedClients.end(), client) == invitedClients.end())
 	{
 		invitedClients.push_back(client);
-		// Don't automatically add client to channel - they need to JOIN manually
 	}
 }
 
@@ -118,7 +119,13 @@ void Channel::broadcast(const std::string &msg, int senderFd)
     for (size_t i = 0; i < members.size(); i++)
 	{
         if (members[i]->getFd() != senderFd) 
-            send(members[i]->getFd(), msg.c_str(), msg.size(), 0);
+        {
+            int result = send(members[i]->getFd(), msg.c_str(), msg.size(), MSG_DONTWAIT);
+            if (result == -1 && (errno == EAGAIN || errno == EWOULDBLOCK))
+            {
+                members[i]->addPendingMessage(msg);
+            }
+        }
     }
 }
 

@@ -1,5 +1,3 @@
-// mevcut kanalların listesini ve kullancı sayılarını gösterir
-// BİTTİ
 
 #include "../server/Server.hpp"
 

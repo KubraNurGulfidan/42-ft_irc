@@ -1,6 +1,8 @@
 #include "Client.hpp"
+#include <sys/socket.h>
+#include <ctime>
 
-Client::Client(int _fd): fd(_fd), loggedIn(false), passGiven(false), away(false), isOperator(false)  {}
+Client::Client(int _fd): fd(_fd), loggedIn(false), passGiven(false), away(false), isOperator(false), lastMessageTime(time(NULL)), messageCount(0)  {}
 
 Client::~Client()
 {
@@ -56,4 +58,58 @@ bool Client::isInChannel(Channel* channel) const
 std::string Client::getPrefix() const
 {
     return getNickname() + "!" + getUsername() + "@" + getHostname();
+}
+
+bool Client::checkFloodProtection()
+{
+    time_t currentTime = time(NULL);
+    
+    if (currentTime - lastMessageTime >= 1)
+    {
+        resetFloodCounter();
+        lastMessageTime = currentTime;
+    }
+    
+    messageCount++;
+    
+    if (messageCount > MAX_MESSAGES_PER_SECOND)
+    {
+        return false;
+    }
+    
+    return true;
+}
+
+void Client::resetFloodCounter()
+{
+    messageCount = 0;
+}
+
+bool Client::isFlooding() const
+{
+    return messageCount > MAX_MESSAGES_PER_SECOND;
+}
+
+void Client::addPendingMessage(const std::string& message)
+{
+    pendingMessages.push_back(message);
+}
+
+void Client::sendPendingMessages()
+{
+    for (size_t i = 0; i < pendingMessages.size(); i++)
+    {
+        send(fd, pendingMessages[i].c_str(), pendingMessages[i].size(), 0);
+    }
+    clearPendingMessages();
+}
+
+void Client::clearPendingMessages()
+{
+    pendingMessages.clear();
+}
+
+bool Client::hasPendingMessages() const
+{
+    return !pendingMessages.empty();
 }
